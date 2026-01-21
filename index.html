@@ -1,112 +1,32 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">  
-    <script src="https://www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/shaka-player@4.11.9/dist/shaka-player.compiled.js"></script>
-    
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #303030;
-            overflow: hidden;
-        }
-        video {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-        #loader {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-        }
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 6px solid rgba(255, 255, 255, 0.2);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        #loader.hidden {
-            display: none;
-        }
+        body { margin: 0; padding: 0; background: black; overflow: hidden; }
+        cast-media-player { width: 100%; height: 100%; }
     </style>
+    <script src="//www.gstatic.com/cast/sdk/libs/caf/receiver/v3/cast_receiver_framework.js"></script>
 </head>
 <body>
-    <video id="video" autoplay></video>
-    <div id="loader">
-        <div class="spinner"></div>
-    </div>
-    
+
+    <cast-media-player></cast-media-player>
+
     <script>
-        shaka.polyfill.installAll();
-        
-        if (!shaka.Player.isBrowserSupported()) {
-            console.error('Browser not supported!');
-        }
-        
-        const video = document.getElementById('video');
-        const loader = document.getElementById('loader');
-        const player = new shaka.Player();
-        player.attach(video);
-        
-        player.configure({
-            streaming: {
-                bufferingGoal: 30,
-                rebufferingGoal: 2,
-                retryParameters: {
-                    timeout: 30000,
-                    maxAttempts: 4,
-                    baseDelay: 1000,
-                    backoffFactor: 2
-                }
-            }
+        const context = cast.framework.CastReceiverContext.getInstance();
+        const playerManager = context.getPlayerManager();
+        const playbackConfig = new cast.framework.PlaybackConfig();
+
+        playbackConfig.useShakaForHls = true;
+        playbackConfig.useShakaForDash = true;
+
+        context.start({
+            playbackConfig: playbackConfig,
+            supportedMediaCommands: cast.framework.messages.Command.ALL_BASIC_MEDIA
         });
-        
-        player.getNetworkingEngine().registerRequestFilter(function(type, request) {
-            console.log('Request:', type, request.uris[0]);
+
+        playerManager.addEventListener(cast.framework.events.EventType.ERROR, (event) => {
+            console.error(event);
         });
-        
-        player.addEventListener('error', function(event) {
-            console.error('Shaka error:', event.detail);
-            loader.classList.add('hidden');
-        });
-        
-        player.addEventListener('loading', function() {
-            loader.classList.remove('hidden');
-        });
-        
-        video.addEventListener('playing', function() {
-            loader.classList.add('hidden');
-        });
-        
-        video.addEventListener('waiting', function() {
-            loader.classList.remove('hidden');
-        });
-        
-        const receiver = new shaka.cast.CastReceiver(
-            video, 
-            player,
-            function(appData) {
-                console.log('App data received:', appData);
-            }
-        );
-        
-        receiver.addEventListener('caststatuschanged', function(event) {
-            console.log('Cast status changed');
-        });
-        
-        console.log('Shaka Cast Receiver initialized');
     </script>
 </body>
 </html>
