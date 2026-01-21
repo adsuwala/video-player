@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="//www.gstatic.com/cast/sdk/libs/caf/receiver/v3/cast_receiver_framework.js"></script>
+</head>
+<body>
+    <cast-media-player></cast-media-player>
+
+    <script>
+        const context = cast.framework.CastReceiverContext.getInstance();
+        const playbackConfig = new cast.framework.PlaybackConfig();
+
+        playbackConfig.useShakaForHls = true;
+
+        playbackConfig.useShakaForDash = true;
+
+        context.start({
+            playbackConfig: playbackConfig,
+            supportedMediaCommands: cast.framework.messages.Command.ALL_BASIC_MEDIA
+        });
+    </script>
+</body>
+</html>
