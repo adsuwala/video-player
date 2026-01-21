@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">    
-    <script defer src="https://www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/shaka-player@4.11.9/dist/shaka-player.compiled.js"></script>
+    <meta charset="UTF-8">   
+    <script src="https://www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/shaka-player@4.11.9/dist/shaka-player.compiled.js"></script>
     
     <style>
         body {
@@ -22,48 +22,53 @@
     </style>
 </head>
 <body>
-    <video id="video"></video>
+    <video id="video" autoplay></video>
     
     <script>
-        window.addEventListener('load', function() {
-            const castReceiverManager = cast.receiver.CastReceiverManager.getInstance();
-            const messageBus = castReceiverManager.getCastMessageBus('urn:x-cast:com.google.cast.media');
-            
-            const video = document.getElementById('video');
-
-            const player = new shaka.Player();
-            player.attach(video);
-            
-            player.getNetworkingEngine().registerRequestFilter(function(type, request) {
-                console.log('Request type:', type);
-                console.log('Request URL:', request.uris[0]);
-                
-            });
-            
-            player.addEventListener('error', function(event) {
-                console.error('Shaka Player error:', event.detail);
-            });
-            
-            messageBus.onMessage = function(event) {
-                console.log('Cast message received:', event.data);
-                const data = JSON.parse(event.data);
-                
-                if (data.type === 'LOAD' && data.media) {
-                    const contentId = data.media.contentId;
-                    console.log('Loading media:', contentId);
-                    
-                    player.load(contentId).then(function() {
-                        console.log('Media loaded successfully');
-                        video.play();
-                    }).catch(function(error) {
-                        console.error('Load failed:', error);
-                    });
+        shaka.polyfill.installAll();
+        
+        if (!shaka.Player.isBrowserSupported()) {
+            console.error('Browser not supported!');
+        }
+        
+        const video = document.getElementById('video');
+        const player = new shaka.Player();
+        player.attach(video);
+        
+        player.configure({
+            streaming: {
+                bufferingGoal: 30,
+                rebufferingGoal: 2,
+                retryParameters: {
+                    timeout: 30000,
+                    maxAttempts: 4,
+                    baseDelay: 1000,
+                    backoffFactor: 2
                 }
-            };
-            
-            castReceiverManager.start();
-            console.log('Receiver ready with Shaka Player and request filters');
+            }
         });
+        
+        player.getNetworkingEngine().registerRequestFilter(function(type, request) {
+            console.log('Request:', type, request.uris[0]);
+        });
+        
+        player.addEventListener('error', function(event) {
+            console.error('Shaka error:', event.detail);
+        });
+        
+        const receiver = new shaka.cast.CastReceiver(
+            video, 
+            player,
+            function(appData) {
+                console.log('App data received:', appData);
+            }
+        );
+        
+        receiver.addEventListener('caststatuschanged', function(event) {
+            console.log('Cast status changed');
+        });
+        
+        console.log('Shaka Cast Receiver initialized');
     </script>
 </body>
 </html>
