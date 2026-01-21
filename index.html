@@ -20,22 +20,33 @@
     <script>
         window.addEventListener('load', function() {
             const context = cast.framework.CastReceiverContext.getInstance();
+            const playerManager = context.getPlayerManager();
             const playbackConfig = new cast.framework.PlaybackConfig();
             
-            playbackConfig.useShakaForHls = true;
-            playbackConfig.useShakaForDash = true;
-            
             playbackConfig.manifestRequestHandler = function(request) {
-                request.headers = request.headers || {};
-                request.withCredentials = false;
+                request.headers = {
+                    'Referer': 'https://vimeo.com/'
+                };
                 return request;
             };
             
             playbackConfig.segmentRequestHandler = function(request) {
-                request.headers = request.headers || {};
-                request.withCredentials = false;
+                request.headers = {
+                    'Referer': 'https://vimeo.com/'
+                };
                 return request;
             };
+
+            playerManager.setMessageInterceptor(
+                cast.framework.messages.MessageType.LOAD,
+                function(loadRequestData) {
+                    if (loadRequestData.media && loadRequestData.media.contentUrl) {
+                        loadRequestData.media.hlsSegmentFormat = cast.framework.messages.HlsSegmentFormat.TS;
+                        loadRequestData.media.hlsVideoSegmentFormat = cast.framework.messages.HlsVideoSegmentFormat.MPEG2_TS;
+                    }
+                    return loadRequestData;
+                }
+            );
             
             context.start({
                 playbackConfig: playbackConfig,
