@@ -1,31 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <style>
-        body { margin: 0; padding: 0; background: black; overflow: hidden; }
-        cast-media-player { width: 100%; height: 100%; }
-    </style>
+    <meta charset="utf-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.js"></script>
     <script src="//www.gstatic.com/cast/sdk/libs/caf/receiver/v3/cast_receiver_framework.js"></script>
+    <style>
+        body { margin: 0; background: black; }
+        #video { width: 100vw; height: 100vh; }
+    </style>
 </head>
 <body>
-
     <cast-media-player></cast-media-player>
-
     <script>
         const context = cast.framework.CastReceiverContext.getInstance();
-        const playerManager = context.getPlayerManager();
         const playbackConfig = new cast.framework.PlaybackConfig();
 
         playbackConfig.useShakaForHls = true;
-        playbackConfig.useShakaForDash = true;
 
         context.start({
             playbackConfig: playbackConfig,
             supportedMediaCommands: cast.framework.messages.Command.ALL_BASIC_MEDIA
-        });
-
-        playerManager.addEventListener(cast.framework.events.EventType.ERROR, (event) => {
-            console.error(event);
         });
     </script>
 </body>
